@@ -1,0 +1,2 @@
+recursive-include orca/scripts *
+recursive-include orca/models *
