@@ -55,7 +55,7 @@ To test Orca, please start from [Step2](#step2-prediction). We provide test file
 | 2      | MCF7.Example.pileup                       | orca-pred_bascal_feature_ext | Pileup file of a human sample from samtools mpileup command        |
 | 3      | Answer_from_RMBase_and_DirectRMDB_NGS.csv | orca-annotation              | A csv file containing the genomic coordicates of RNA modifications |
 
-Please click [Here](#) for download.
+Please click [Here](#https://bioinfo.ioz.ac.cn/files/share/7O9b7pxx) for download.
 
 ## Usage
 
