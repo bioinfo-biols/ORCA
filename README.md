@@ -165,18 +165,17 @@ While running Orca, make sure to run all commands in Step 2 and Step 3 with **th
 1. **Genomic Location**
     ```bash
     # Map transcriptomic to genomic coordinates:
-    usage: orca-prediction [-h] [--prefix PREFIX] --work_dir WORK_DIR [--extractor_path EXTRACTOR_PATH] [--classifier_path CLASSIFIER_PATH]
+    usage: orca-genomic_locator [-h] --gtf_path GTF_PATH [--prefix PREFIX] --work_dir WORK_DIR [--n_processes N_PROCESSES]
 
-    Run prediction on sample feature data using prediction models.
+    Convert transcriptomic coordinates to genomic coordinates.
 
     options:
       -h, --help            show this help message and exit
+      --gtf_path GTF_PATH   Path to directory containing exon_hg38.gtf and exon_hg38.index
       --prefix PREFIX       prefix of output file, please keep it THE SAME AS the one used in previous steps. Default: data
       --work_dir WORK_DIR   Working directory of your job, please keep it THE SAME AS the one used in previous steps.
-      --extractor_path EXTRACTOR_PATH
-                            Path to the feature extractor model, default: orca/models/feature_extractor.pt
-      --classifier_path CLASSIFIER_PATH
-                            Path to the class classifier model, default: orca/models/class_classifier.pt
+      --n_processes N_PROCESSES
+                            Number of parallel processes. Default: All available CPU cores
     ```
 
 

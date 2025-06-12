@@ -581,7 +581,7 @@ def train(full_data_features, all_train_data, all_train_label1, all_train_label2
 
 def get_negative_trainset(full_df):
 
-    nega_usage = full_df[full_df['label'] == 'unlabelled'].sample(n=int(0.03 * full_df.shape[0])).reset_index(drop=True)
+    nega_usage = full_df[full_df['label'] == 'unlabelled'].sample(n=int(0.05 * full_df.shape[0])).reset_index(drop=True)
 
     nega_usage['label1'] = 'unlabelled'
     nega_usage['label2'] = 0
