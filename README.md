@@ -40,9 +40,8 @@ One can create a virtual envirionment with conda and install Orca using wheel fi
 ```bash
 conda create -n Orca python=3.10
 conda activate Orca
-git clone https://bioinfo.ioz.ac.cn/git/dongh/Orca.git
-cd Orca
-pip install ./dist/ORCA-0.1.0-py3-none-any.whl
+wget https://github.com/bioinfo-biols/ORCA/releases/download/v-0.1.0/ORCA-0.1.0-py3-none-any.whl
+pip install ./ORCA-0.1.0-py3-none-any.whl
 ```
 
 ### Information of test files
