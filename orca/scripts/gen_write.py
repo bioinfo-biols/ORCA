@@ -58,7 +58,7 @@ def gen_write(txome, exon_path, exon_index, output_path, sep, locks):
         strands = list()
         Hikari = 0
         ifbreak = False
-        for line, toki in zip(txome.iterrows(), tqdm(range(0, txome.shape[0]))):
+        for line in txome.iterrows():
             Hikari += 1
             _, row = line
             txid = row['id']

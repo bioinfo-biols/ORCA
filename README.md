@@ -54,8 +54,9 @@ To test Orca, please start from [Step2](#step2-prediction). We provide test file
 | 1      | MCF7.Example.eventalign                   | orca-pred_signal_feature_ext | Eventalign file of a human sample from f5c eventalign command      |
 | 2      | MCF7.Example.pileup                       | orca-pred_bascal_feature_ext | Pileup file of a human sample from samtools mpileup command        |
 | 3      | Answer_from_RMBase_and_DirectRMDB_NGS.csv | orca-annotation              | A csv file containing the genomic coordicates of RNA modifications |
+| 4      | hg38.gtf                                  | orca-genomic_locator         | GTF file from Ensembl                                              |
 
-Please click [Here](https://bioinfo.ioz.ac.cn/files/share/7O9b7pxx) for download.
+Please click [Here](https://bioinfo.ioz.ac.cn/files/share/9jMFIP5A) for download.
 
 ## Usage
 
@@ -214,8 +215,7 @@ While running Orca, make sure to run all commands in Step 2 and Step 3 with **th
       --answer_path ANSWER_PATH
                             Path to the NGS-based answers
       --ref_path REF_PATH   Path to the reference GENOME path
-      --mod_num_threshold MOD_NUM_THRESHOLD
-                            Minimum number of modifications required to retain
+      --threshold THRESHOLD Only consider modifications with at least this number of sites supported by NGS answers. Default: 50
       --prefix PREFIX       prefix of output file, please keep it THE SAME AS the one used in previous steps. Default: data
       --work_dir WORK_DIR   Working directory of your job, please keep it THE SAME AS the one used in previous steps.
     ```

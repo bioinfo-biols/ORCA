@@ -603,8 +603,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--answer_path', type=str, required=True, help='Path to the NGS-based answers')
     parser.add_argument('--ref_path', type=str, required=True, help='Path to the reference GENOME path')
-    # parser.add_argument('--model_path', type=str, required=True, help='Path to save the trained model')
-    parser.add_argument('--mod_num_threshold', type=int, default=50, help='Minimum number of modifications required to retain')
+    parser.add_argument('--threshold', type=int, default=50, help='Only consider modifications with at least this number of sites supported by NGS answers. Default: 50')
     parser.add_argument('--prefix', type=str, default='data', help='prefix of output file, please keep it THE SAME AS the one used in previous steps. Default: data')
     parser.add_argument('--work_dir', required=True, help='Working directory of your job, please keep it THE SAME AS the one used in previous steps. ')
 
