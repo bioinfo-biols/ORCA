@@ -600,6 +600,7 @@ def get_final_mod(label_mod, label_phase, preds_mod, preds_phase):
             return label_mod, label_phase
 
 def main():
+    print('Performing annotation...\n')
     parser = argparse.ArgumentParser()
     parser.add_argument('--answer_path', type=str, required=True, help='Path to the NGS-based answers')
     parser.add_argument('--ref_path', type=str, required=True, help='Path to the reference GENOME path')
@@ -615,7 +616,7 @@ def main():
     answer_path = args.answer_path
     output_path = f'{args.work_dir}/{args.prefix}.annotation.per.site'
     model_path = args.work_dir
-    mod_num_threshold = args.mod_num_threshold
+    mod_num_threshold = args.threshold
     reference = args.ref_path
 
     bas_dict = {
@@ -661,6 +662,6 @@ def main():
 
     full_df = pd.concat([preds, labels], axis=0).reset_index(drop=True)
     full_df.to_csv(output_path, index=False)
-
+    print(f'Annotation completed!')
 if __name__ == '__main__':
     main()

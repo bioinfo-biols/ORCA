@@ -3,6 +3,7 @@ from tqdm import tqdm
 import argparse
 
 def main():
+    print('Preparing basecalling features for annotation...\n')
     parser = argparse.ArgumentParser()
     parser.add_argument('--prefix', type=str, default='data', help='prefix of output file, please keep it THE SAME AS the one used in previous steps. Default: data')
     parser.add_argument('--work_dir', required=True, help='Working directory of your job, please keep it THE SAME AS the one used in previous steps. ')
@@ -36,6 +37,6 @@ def main():
         one = one.merge(t_reset, on=['id', 'position'], how='left')
         # one[['contig', 'gen_position', 'strand']] = one.apply(lambda row: get_gen_inform(row['id'], row['position'], t), axis=1)
         one.to_csv(output, index=False, mode='a', header=False)
-
+    print('Basecalling features for annotation has been extracted successfully!')
 if __name__ == '__main__':
     main()

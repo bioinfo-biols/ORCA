@@ -242,6 +242,7 @@ def dataprep(args):
 
 
 def main():
+    print('Preparing signal feature for prediction...\n')
     parser = argparse.ArgumentParser(description="Extract signal alignment features from the eventalign results.")
     parser.add_argument('--n_processes', type=int, default=cpu_count(), help='Number of parallel processes. Default: All available CPU cores')
     parser.add_argument('--eventalign', type=str, required=True, help='Path to the eventalign file.')
@@ -251,6 +252,6 @@ def main():
 
     args = parser.parse_args()
     dataprep(args)
-
+    print('Signal feature for prediction has been extracted successfully!')
 if __name__ == '__main__':
     main()

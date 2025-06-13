@@ -61,6 +61,7 @@ def process_txid(args):
     #     return 0
 
 def main():
+    print('Merging signal and basecalling features for prediction...\n')
     # Argument parsing
     parser = argparse.ArgumentParser()
     parser.add_argument('--prefix', type=str, default='data', help='prefix of output file, please keep it THE SAME AS the one used in previous steps. Default: data')
@@ -106,6 +107,6 @@ def main():
         with tqdm(total=len(valid_idx)) as pbar:
             for result in pool.imap_unordered(process_txid, tasks):
                 pbar.update(result)
-
+    print('Merged successfully!')
 if __name__ == '__main__':
     main()

@@ -41,7 +41,7 @@ def ELIGOS_feature_index(feature_path, index_path):
         fa.write(f"{txid},{pos_start},{pos_end}\n")
 
 def main():
-
+    print('Performing prediction...\n')
     _MODEL_DIR = files('orca').joinpath('models')
     _DEFAULT_EXTRACTOR = str(_MODEL_DIR.joinpath('feature_extractor.pt'))
     _DEFAULT_CLASSIFIER = str(_MODEL_DIR.joinpath('class_classifier.pt'))
@@ -79,7 +79,7 @@ def main():
         _, row = line
         predict(row, feature_path, New_Features, feature_extractor, class_classifier, output)
 
-    print("Done!")
+    print("Prediction completed successfully!")
 
 if __name__ == '__main__':
     main()

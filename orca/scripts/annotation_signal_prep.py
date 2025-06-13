@@ -135,7 +135,7 @@ def get_signal_raw(target, signal_path, outs):
 
 
 def main():
-
+    print('Preparing signal feature for annotation...\n')
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--prefix', type=str, default='data', help='prefix of output file, please keep it THE SAME AS the one used in previous steps. Default: data')
@@ -160,7 +160,7 @@ def main():
 
     with Pool(cpu_count(), initializer=init_process_for_flatten, initargs=(s1_indexed_path,)) as pool:
         for result in tqdm(pool.imap(process_item, tasks, chunksize=1000),
-                           total=len(tasks), desc="提取特征", unit="个", unit_scale=True):
+                           total=len(tasks), desc="Feature extraction", unit="site", unit_scale=True):
             if result is not None:
                 trad_list.append(result)
 
@@ -170,6 +170,6 @@ def main():
 
     trad_df.to_csv(flat, index=False)
     os.remove(s1_indexed_path)
-
+    print('Signal feature for annotation has been extracted successfully!')
 if __name__ == '__main__':
     main()

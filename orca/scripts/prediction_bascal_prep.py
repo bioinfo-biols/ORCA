@@ -200,6 +200,7 @@ def multi_get_bascal_err(output, output_index, pileup, pileup_index, n_processes
 
 
 def main():
+    print('Preparing basecalling feature for prediction...\n')
     parser = argparse.ArgumentParser()
     
     parser.add_argument('--pileup', required=True, help='pileup FILE PATH from samtools mpileup')
@@ -217,7 +218,7 @@ def main():
 
     index_pileup(pileup, pileup_index)
     multi_get_bascal_err(output_feature, output_index, pileup, pileup_index, args.n_processes)
-
+    print('Basecalling feature for prediction has been extracted successfully!')
 
 if __name__ == '__main__':
     main()
