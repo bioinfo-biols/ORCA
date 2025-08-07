@@ -125,7 +125,7 @@ import argparse
 def main():
     print('Locating transcript sites back to genomic coordinates...\n')
     parser = argparse.ArgumentParser(description='Convert transcriptomic coordinates to genomic coordinates.')
-    parser.add_argument('--gtf_path', required=True, help='Path to directory containing exon_hg38.gtf and exon_hg38.index')
+    parser.add_argument('--gtf_path', required=True, help='Path to GTF file')
     parser.add_argument('--prefix', type=str, default='data', help='prefix of output file, please keep it THE SAME AS the one used in previous steps. Default: data')
     parser.add_argument('--work_dir', required=True, help='Working directory of your job, please keep it THE SAME AS the one used in previous steps. ')
     parser.add_argument('--n_processes', type=int, default=cpu_count(), help='Number of parallel processes. Default: All available CPU cores')

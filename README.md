@@ -43,6 +43,7 @@ conda activate Orca
 wget https://github.com/bioinfo-biols/ORCA/releases/download/v-0.1.0/ORCA-0.1.0-py3-none-any.whl
 pip install ./ORCA-0.1.0-py3-none-any.whl
 ```
+The installation takes less than 2 hours in a stable network environment.
 
 ### Information of test files
 
@@ -171,7 +172,7 @@ While running Orca, make sure to run all commands in Step 2 and Step 3 with **th
 
     options:
       -h, --help            show this help message and exit
-      --gtf_path GTF_PATH   Path to directory containing exon_hg38.gtf and exon_hg38.index
+      --gtf_path GTF_PATH   Path to GTF file
       --prefix PREFIX       prefix of output file, please keep it THE SAME AS the one used in previous steps. Default: data
       --work_dir WORK_DIR   Working directory of your job, please keep it THE SAME AS the one used in previous steps.
       --n_processes N_PROCESSES
