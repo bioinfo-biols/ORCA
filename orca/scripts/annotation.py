@@ -531,7 +531,7 @@ def full_feature(bascal_path, signal_path, answer_path, mod_num_threshold, ref):
     bas = pd.read_csv(bascal_path)
     sig = pd.read_csv(signal_path)
     multi_answers = get_multi_answer(answer_path)
-    full_df = pd.concat([sig.set_index(['id', 'position', 'kmer']), bas.set_index(['id', 'position', 'kmer'])], axis=1).reset_index()
+    full_df = pd.concat([sig.set_index(['id', 'position', 'kmer']), bas.set_index(['id', 'position', 'kmer'])], axis=1, join='inner').reset_index()
     genome = pysam.FastaFile(ref)  # Read indexed genome file
     full_df['11_mers'] = full_df.progress_apply(lambda row: get_genome_kmer(genome, row['contig'], row['gen_position']), axis=1)
     full_df['txome_11_mers'] = full_df.apply(lambda row: get_RF(row['strand'], row['11_mers']), axis=1)
