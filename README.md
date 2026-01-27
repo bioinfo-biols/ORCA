@@ -40,8 +40,8 @@ One can create a virtual envirionment with conda and install Orca using wheel fi
 ```bash
 conda create -n Orca python=3.10
 conda activate Orca
-wget https://github.com/bioinfo-biols/ORCA/releases/download/v-0.1.0/ORCA-0.1.0-py3-none-any.whl
-pip install ./ORCA-0.1.0-py3-none-any.whl
+wget https://github.com/bioinfo-biols/ORCA/releases/download/v-0.1.2/ORCA-0.1.2-py3-none-any.whl
+pip install ./ORCA-0.1.2-py3-none-any.whl
 ```
 The installation takes less than 2 hours in a stable network environment.
 
@@ -146,17 +146,22 @@ While running Orca, make sure to run all commands in Step 2 and Step 3 with **th
 4. **Run Prediction**  
     ```bash
     # RNA modification sites prediction based on pretrained models
-    usage: orca-prediction [-h] [--prefix PREFIX] --work_dir WORK_DIR [--extractor_path EXTRACTOR_PATH] [--classifier_path CLASSIFIER_PATH]
-
+    usage: prediction.py [-h] [--prefix PREFIX] --work_dir WORK_DIR
+                         [--default_model_version {002,004} | --extractor_path EXTRACTOR_PATH] [--classifier_path CLASSIFIER_PATH]
+    
+    Run prediction on sample feature data using prediction models.
+    
     options:
       -h, --help            show this help message and exit
-      --prefix PREFIX       prefix of output file, default: data
-      --work_dir WORK_DIR
-                            DIRECTORY of output files
+      --prefix PREFIX       prefix of output file, please keep it THE SAME AS the one used in previous steps. Default: data
+      --work_dir WORK_DIR   Working directory of your job, please keep it THE SAME AS the one used in previous steps.
+      --default_model_version {002,004}
+                            Use built-in default model weights for a given platform version (002 or 004). If provided,
+                            extractor_path/classifier_path should NOT be set.
       --extractor_path EXTRACTOR_PATH
-                            Path to the feature extractor model, default: orca/models/feature_extractor.pt
+                            Path to the feature extractor model (use together with --classifier_path).
       --classifier_path CLASSIFIER_PATH
-                            Path to the class classifier model, default: orca/models/class_classifier.pt
+                            Path to the class classifier model (use together with --extractor_path).
     ```
 
 ### Step3. Annotation
@@ -206,15 +211,21 @@ While running Orca, make sure to run all commands in Step 2 and Step 3 with **th
 4. **Annotation**:  
 
     The answer file is a 0-based modification annotation CSV file without a header, containing four columns: chromosome, position, strand, and modification type. See the test folder for an example.
+    
+    The base type file is a two-column TSV file specifying the base type for each modification. It contains no required header; the first column is the modification name and the second column is the corresponding base type (A/C/G/T/N/unknown, please do not use U).
+
+    The modification names must be consistent between the answer file and the base type file (e.g., pseudouridine should be written consistently as either **pseudoU in both files** or **ψ in both files**).
 
     ```bash
-    usage: orca-annotation [-h] --answer_path ANSWER_PATH --ref_path REF_PATH [--mod_num_threshold MOD_NUM_THRESHOLD] [--prefix PREFIX] --work_dir WORK_DIR
-
+    usage: orca-annotation [-h] --answer_path ANSWER_PATH --ref_path REF_PATH --base_type_path BASE_TYPE_PATH [--threshold THRESHOLD] [--prefix PREFIX] --work_dir WORK_DIR
+    
     options:
       -h, --help            show this help message and exit
       --answer_path ANSWER_PATH
                             Path to the NGS-based answers
       --ref_path REF_PATH   Path to the reference GENOME path
+      --base_type_path BASE_TYPE_PATH
+                            TSV with two columns: modification name and base type
       --threshold THRESHOLD Only consider modifications with at least this number of sites supported by NGS answers. Default: 50
       --prefix PREFIX       prefix of output file, please keep it THE SAME AS the one used in previous steps. Default: data
       --work_dir WORK_DIR   Working directory of your job, please keep it THE SAME AS the one used in previous steps.

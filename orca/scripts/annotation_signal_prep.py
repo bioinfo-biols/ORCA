@@ -9,15 +9,7 @@ from multiprocessing import Pool, cpu_count
 import argparse
 
 # Global variables for subprocess initialization
-refk_csv = None
 s1_indexed = None
-
-def init_process():
-    global refk_csv
-    refk_csv = pd.read_csv(
-        '/histor/zhao/donghan/.conda/envs/New_xPore/lib/python3.8/site-packages/xpore/diffmod/model_kmer.csv',
-        sep=',', 
-        index_col=['model_kmer'])
 
 def init_process_for_flatten(s1_indexed_path):
     global s1_indexed
@@ -27,7 +19,7 @@ def GMM_3D_Training(signals, norm_stdv):
     """Keep the original training function unchanged"""
     gmm1 = GaussianMixture(n_components=1, covariance_type='full', init_params='k-means++')
     gmm1.fit(signals)
-    
+
     F1_Mean = gmm1.means_[0][0]
     F2_Mean = (gmm1.means_[0][1] - norm_stdv) / ((gmm1.means_[0][1] + norm_stdv) / 2)
     F1_Stdv = np.sqrt(gmm1.covariances_[0][0][0])
@@ -40,36 +32,35 @@ def GMM_execute_wrapper(args):
     """Wrapper function for argument unpacking"""
     return GMM_execute(*args)
 
-def GMM_execute(mean_list, stdv_list, kmer):
-    """Modified execution function (keep original logic)"""
+def GMM_execute(mean_list, stdv_list, model_mean, model_stdv):
+    """Use model_mean/model_stdv from the dataframe itself"""
     mean_list = np.array(ast.literal_eval(mean_list))
     stdv_list = np.array(ast.literal_eval(stdv_list))
-    
-    model_mean = refk_csv.loc[kmer]['model_mean']
-    model_stdv = refk_csv.loc[kmer]['model_stdv']
-    
+
+    model_mean = float(model_mean)
+    model_stdv = float(model_stdv)
+
     mean_list -= model_mean
     stdv_list = np.log(stdv_list + 0.001)
-    
+
     signals = np.vstack((mean_list, stdv_list)).T
     norm_stdv = np.log(model_stdv + 0.001)
-    
+
     feat_list = GMM_3D_Training(signals, norm_stdv)
     return feat_list
 
 def parallel_processing(s, num_processes=16):
     """Main function for parallel processing"""
-    # Prepare parameter list
-    params = s[['mean', 'stdv', 'kmer']].itertuples(index=False, name=None)
-    
-    # Create process pool
-    with mp.Pool(processes=num_processes, initializer=init_process) as pool:
-        # Use imap for processing and show progress bar
-        results = list(tqdm(pool.imap(GMM_execute_wrapper, params, chunksize=100),
-                        total=len(s),
-                        desc="Processing rows"))
-    
-    # Add results to DataFrame
+    # Now model_mean/model_stdv come from s itself (data.for.annotaion)
+    params = s[['mean', 'stdv', 'model_mean', 'model_stdv']].itertuples(index=False, name=None)
+
+    with mp.Pool(processes=num_processes) as pool:
+        results = list(tqdm(
+            pool.imap(GMM_execute_wrapper, params, chunksize=100),
+            total=len(s),
+            desc="Processing rows"
+        ))
+
     result_columns = ['Mean_average', 'Stdv_average', 'Mean_svar', 'Stdv_svar', 'Cov']
     s[result_columns] = pd.DataFrame(results, index=s.index)
     return s

@@ -301,10 +301,10 @@ def get_data_features(df):
 
     return data_features
 
-def get_mod_dict(test_df):
+def get_mod_dict(train_df):
     mod_dict = dict()
     
-    for i in set(test_df.set_index(['label1', 'label1_encoded']).index):
+    for i in set(train_df.set_index(['label1', 'label1_enc']).index):
         mod_dict[i[1]] = i[0]
     tcid_dom = {v: k for k, v in mod_dict.items()}
     
@@ -403,7 +403,7 @@ def batch_prediction(full_data_features, full_model):
     return logits1, logits2
 
 def get_real_df(logits11, logits2, m5c_df, mod_dict):
-
+    print(mod_dict)
     m5c_df1 = m5c_df.copy()
 
     max_logits, pred_idx = logits11.max(dim=1)
@@ -485,12 +485,14 @@ def get_RF(strand, mers):
         return RF(mers)
 
 def phase_shift(p, s, i):
+    p = int(p)
     if s == '+':
         return p + i
     else:
         return p - i
     
 def phase_shift_r(p, s, i):
+    p = int(p)
     if s == '+':
         return p - i
     else:
@@ -607,7 +609,8 @@ def main():
     parser.add_argument('--threshold', type=int, default=50, help='Only consider modifications with at least this number of sites supported by NGS answers. Default: 50')
     parser.add_argument('--prefix', type=str, default='data', help='prefix of output file, please keep it THE SAME AS the one used in previous steps. Default: data')
     parser.add_argument('--work_dir', required=True, help='Working directory of your job, please keep it THE SAME AS the one used in previous steps. ')
-
+    parser.add_argument('--base_type_path', type=str, required=True,
+                        help='TSV with two columns: modification name and base type')
 
     args = parser.parse_args()
 
@@ -619,12 +622,32 @@ def main():
     mod_num_threshold = args.threshold
     reference = args.ref_path
 
-    bas_dict = {
-        'm5U': 'T', 'm6Am': 'A', 'otherMod': 'N', 'm7G': 'G',
-        'Nm': 'N', 'm1A': 'A', 'm5C': 'C', 'pseudoU': 'T',
-        'm6A': 'A', 'Inosine': 'A', 'unlabelled': 'N',
-        'unknown': 'unknown'
-    }
+    def _load_bas_dict(tsv_path: str) -> dict:
+        df = pd.read_csv(tsv_path, sep='\t', header=None, comment='#', dtype=str)
+        df = df.dropna(how='all')
+        if df.shape[1] < 2:
+            raise ValueError(f'base_type_path must have at least 2 columns, got {df.shape[1]}: {tsv_path}')
+
+        df = df.iloc[:, :2].copy()
+        df.columns = ['modification', 'base']
+        df['modification'] = df['modification'].astype(str).str.strip()
+        df['base'] = df['base'].astype(str).str.strip()
+
+        # If there is a header row, drop it (best-effort)
+        if len(df) > 0:
+            m0 = df.loc[df.index[0], 'modification'].lower()
+            b0 = df.loc[df.index[0], 'base'].lower()
+            if (('mod' in m0) or ('name' in m0) or ('modification' in m0)) and (('base' in b0) or ('nuc' in b0) or ('nt' in b0) or ('nucleotide' in b0)):
+                df = df.iloc[1:].reset_index(drop=True)
+
+        df = df[(df['modification'] != '') & (df['base'] != '')]
+        bas_dict_local = dict(zip(df['modification'], df['base']))
+
+        # Keep behavior compatible with previous hardcoded dict
+        bas_dict_local.setdefault('unknown', 'unknown')
+        return bas_dict_local
+
+    bas_dict = _load_bas_dict(args.base_type_path)
 
     full_df, full_data_features, mod_list = full_feature(bascal_path, signal_path, answer_path, mod_num_threshold, reference)
     num_classes = len(mod_list)
@@ -632,11 +655,11 @@ def main():
     nega_usage = get_negative_trainset(full_df)
     trad_df = get_new_trad_df(full_df, nega_usage)
     all_train_data, all_test_data, all_train_label1, all_test_label1, all_train_label2, all_test_label2, _, _, all_test_df, all_train_df = get_openSet('All', trad_df, 0.85)
-    all_mod_dict, all_tcid_dom = get_mod_dict(all_test_df)
-    
+    all_mod_dict, all_tcid_dom = get_mod_dict(all_train_df)
+
     full_model = train(full_data_features, all_train_data, all_train_label1, all_train_label2, all_test_data, all_test_df, num_classes, all_mod_dict, all_tcid_dom, model_path )
     full_model.eval()
-    
+
     logits1, logits2 = batch_prediction(full_data_features, full_model)
     full_df_meta = process_prediction(full_df, nega_usage, logits1, logits2, bas_dict, all_train_df, all_test_df, all_mod_dict, num_classes)
     full_df_meta['preds2'] = full_df_meta['preds2'].astype(int)
@@ -665,3 +688,4 @@ def main():
     print(f'Annotation completed!')
 if __name__ == '__main__':
     main()
+

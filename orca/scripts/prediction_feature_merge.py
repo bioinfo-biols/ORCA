@@ -24,20 +24,61 @@ def get_one_tx_df(path, start, end, header):
 def process_txid(args):
     """Main function to process a single txid"""
     txid, signal_path, bascal_path, output_path, signal_dict, bascal_dict, lock, sig_header, bas_header = args
-    # try:
-    # Get index information
+
     sig_info = signal_dict.get(txid)
     bas_info = bascal_dict.get(txid)
-    # if not sig_info or not bas_info:
-    #     return 0
 
     # Read data
     one_sig_df = get_one_tx_df(signal_path, sig_info['start'], sig_info['end'], sig_header)
-    one_bas_df = get_one_tx_df(bascal_path, bas_info['start'], bas_info['end'], bas_header).drop(['ref'], axis=1)
-    one_bas_df.columns = ['depth'] + onepos[:6]  # First 6 features
 
-    # Merge data
+    # NOTE: keep 'ref' for sanity check, then drop it
+    one_bas_df = get_one_tx_df(bascal_path, bas_info['start'], bas_info['end'], bas_header)
+
+    # Keep only the columns we need and normalize names
+    # Expected (after index id,position): ref, depth, then 6 basecalling features
+    if one_bas_df.shape[1] < 8:
+        raise ValueError(f"[{txid}] bascal features have <8 columns after index; cannot parse ref/depth/features.")
+
+    one_bas_df = one_bas_df.iloc[:, :8].copy()
+    one_bas_df.columns = ['ref', 'depth'] + onepos[:6]  # ref + depth + first 6 features
+
+    # Merge data (inner join on id,position)
     one_mer_df = pd.concat([one_bas_df, one_sig_df], axis=1, join='inner').reset_index()
+
+    # Strong sanity check:
+    # bascal 'ref' (single base) must equal the center base of signal 'kmer'
+    # RNA002: 5-mer => center index 2; RNA004: 9-mer => center index 4
+    if 'kmer' not in one_mer_df.columns:
+        raise ValueError(f"[{txid}] merged df has no 'kmer' column from signal features.")
+    if 'ref' not in one_mer_df.columns:
+        raise ValueError(f"[{txid}] merged df has no 'ref' column from basecalling features.")
+
+    kmer_s = one_mer_df['kmer'].astype(str)
+    ref_s = one_mer_df['ref'].astype(str)
+
+    klen = kmer_s.str.len()
+    invalid_len = klen[~klen.isin([5, 9])]
+    if not invalid_len.empty:
+        bad_lens = sorted(invalid_len.unique().tolist())
+        raise ValueError(f"[{txid}] unexpected kmer length(s) {bad_lens}; expected 5 or 9 only.")
+
+    center_base = pd.Series(index=one_mer_df.index, dtype=object)
+    center_base[klen == 5] = kmer_s[klen == 5].str[2]
+    center_base[klen == 9] = kmer_s[klen == 9].str[4]
+
+    mismatch = ref_s.str.upper() != center_base.str.upper()
+    if mismatch.any():
+        bad = one_mer_df.loc[mismatch, ['id', 'position', 'ref', 'kmer']].head(20)
+        raise ValueError(
+            f"[{txid}] REF base mismatch: basecalling 'ref' != center base of signal 'kmer' "
+            f"(5-mer uses kmer[2], 9-mer uses kmer[4]).\n"
+            f"First mismatches:\n{bad.to_string(index=False)}"
+        )
+
+    # Drop ref after passing the sanity check
+    one_mer_df = one_mer_df.drop(columns=['ref'])
+
+    # Keep final columns in expected order
     one_mer_df = one_mer_df[mer_cols]
 
     one_tx_out = ''
@@ -48,17 +89,13 @@ def process_txid(args):
         meta = one5.iloc[2][Index]
         feat = one5.drop(Index, axis=1).values.reshape(-1)
         combined_row = np.concatenate([meta, feat])
-        combined_row_str = ','.join(map(str, combined_row)) + '\n'
-        one_tx_out += combined_row_str
-        # break
-    with lock, open (output_path, 'a') as out:
+        one_tx_out += ','.join(map(str, combined_row)) + '\n'
+
+    with lock, open(output_path, 'a') as out:
         out.write(one_tx_out)
 
-        
     return 1
-    # except Exception as e:
-    #     print(f"Error processing {txid}: {str(e)}")
-    #     return 0
+
 
 def main():
     print('Merging signal and basecalling features for prediction...\n')

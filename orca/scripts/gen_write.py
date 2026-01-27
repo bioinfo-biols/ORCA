@@ -5,38 +5,98 @@ from tqdm import tqdm
 import re
 from multiprocessing import cpu_count
 
-def get_gtf_indexed(gtf_path):
+# def get_gtf_indexed(gtf_path):
+#     exon_path = f'{gtf_path}.exon'
+#     index_path = f'{gtf_path}.exon.index'
+#     with open (gtf_path, 'r') as gtf, open(exon_path, 'w') as exon, open(index_path, 'w') as index:
+#         exon.write('contig,source,type,start,end,unk1,strand,unk2,meta,txid\n')
+#         index.write('txid,start,end\n')
+#         old_txid = ''
+#         for line in gtf:
+#             if line[0] == '#':
+#                 continue
+#             writ = ','.join(line.rstrip().split('\t'))
+#             clas = line.split('\t')[2]
+#             if clas == 'exon':
+#                 # match = re.search(r'transcript_id\s+"([^"]+)"', line)
+#                 match = re.search(r'ENST\d+(?:\.\d+)?', line)
+#                 txid = match.group(0)
+#                 if txid != old_txid:
+#                     if old_txid != '':
+#                         end = exon.tell()
+#                         index.write(f'{old_txid},{start},{end}\n')
+#                         start = end
+#                         exon.write(f'{writ},{txid}\n')
+#                         old_txid = txid
+#                     else:
+#                         start = exon.tell()
+#                         exon.write(f'{writ},{txid}\n')
+#                         old_txid = txid
+#                 else:
+#                     exon.write(f'{writ},{txid}\n')
+#         end = exon.tell()
+#         index.write(f'{old_txid},{start},{end}\n')
+
+def parse_gtf_attributes(attr_field: str):
+    """
+    Parse GTF attributes column (9th field) into a dict.
+    Works for Ensembl-style: key "value"; key2 "value2";
+    """
+    attrs = {}
+    for m in re.finditer(r'(\S+)\s+"([^"]+)"', attr_field):
+        attrs[m.group(1)] = m.group(2)
+    return attrs
+
+
+def get_gtf_indexed(gtf_path, append_version=True):
     exon_path = f'{gtf_path}.exon'
     index_path = f'{gtf_path}.exon.index'
-    with open (gtf_path, 'r') as gtf, open(exon_path, 'w') as exon, open(index_path, 'w') as index:
+    with open(gtf_path, 'r') as gtf, open(exon_path, 'w') as exon, open(index_path, 'w') as index:
         exon.write('contig,source,type,start,end,unk1,strand,unk2,meta,txid\n')
         index.write('txid,start,end\n')
         old_txid = ''
+        start = 0
+
         for line in gtf:
-            if line[0] == '#':
+            if not line or line[0] == '#':
                 continue
-            writ = ','.join(line.rstrip().split('\t'))
-            clas = line.split('\t')[2]
-            if clas == 'exon':
-                # match = re.search(r'transcript_id\s+"([^"]+)"', line)
-                match = re.search(r'ENST\d+(?:\.\d+)?', line)
-                txid = match.group(0)
-                if txid != old_txid:
-                    if old_txid != '':
-                        end = exon.tell()
-                        index.write(f'{old_txid},{start},{end}\n')
-                        start = end
-                        exon.write(f'{writ},{txid}\n')
-                        old_txid = txid
-                    else:
-                        start = exon.tell()
-                        exon.write(f'{writ},{txid}\n')
-                        old_txid = txid
+            parts = line.rstrip('\n').split('\t')
+            if len(parts) < 9:
+                continue
+
+            clas = parts[2]
+            if clas != 'exon':
+                continue
+
+            attr_field = parts[8]
+            attrs = parse_gtf_attributes(attr_field)
+
+            txid = attrs.get("transcript_id", None)
+            if txid is None:
+                continue
+
+            if append_version and "transcript_version" in attrs and (not re.search(r'\.\d+$', txid)):
+                txid = f'{txid}.{attrs["transcript_version"]}'
+
+            writ = ','.join(parts[:8] + [attr_field])  
+            if txid != old_txid:
+                if old_txid != '':
+                    end = exon.tell()
+                    index.write(f'{old_txid},{start},{end}\n')
+                    start = end
                 else:
-                    exon.write(f'{writ},{txid}\n')
-        end = exon.tell()
-        index.write(f'{old_txid},{start},{end}\n')
-        
+                    start = exon.tell()
+
+                exon.write(f'{writ},{txid}\n')
+                old_txid = txid
+            else:
+                exon.write(f'{writ},{txid}\n')
+
+        # flush last txid
+        if old_txid != '':
+            end = exon.tell()
+            index.write(f'{old_txid},{start},{end}\n')
+
 
 def ed_read(txid, exon, exon_index):
     start = exon_index.loc[txid]['start']
@@ -94,7 +154,6 @@ def gen_write(txome, exon_path, exon_index, output_path, sep, locks):
         with locks['feature']:
             txome.to_csv(output_path, mode='a', index=False, header=None, sep=sep)
 
-
 def multi_gen_write(input_path, output_path, sep, n_processes, line_count, exon_path, exon_index):
     col_names = pd.read_csv(input_path, nrows=0, sep=sep).columns
     # n_processes = 16
@@ -137,7 +196,7 @@ def main():
     get_gtf_indexed(args.gtf_path)
 
     exon_path = f'{args.gtf_path}.exon'
-    
+
     exon_index = pd.read_csv(f'{args.gtf_path}.exon.index').set_index('txid')
 
     with open(inputs, 'r') as f:
