@@ -33,6 +33,8 @@ def index_pileup(pileup, ind):
                     start = end
                     end += len(line)
                     old_id = idx
+        if old_id != '':
+            fa.write(f'{old_id},{start},{end}\n')
 
 def quality_scores(quality_string):
     return [ord(char) - 33 for char in quality_string]
