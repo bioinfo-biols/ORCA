@@ -12,16 +12,19 @@ from multiprocessing import cpu_count
 
 
 def index_pileup(pileup, ind):
-    indbar = tqdm(total=os.path.getsize(pileup))
-    with open(pileup, 'r') as f, open(ind, 'w') as fa:
+    """Index every contig using byte offsets consumed by process_transcript."""
+    with (
+        open(pileup, 'rb') as f,
+        open(ind, 'w', encoding='utf-8') as fa,
+        tqdm(total=os.path.getsize(pileup)) as indbar,
+    ):
         fa.write('id,start,end\n')
         old_id = ''
         start = 0
         end = 0
         for line in f:
             indbar.update(len(line))
-            line1 = line.split('\t')
-            idx = line1[0]
+            idx = line.split(b'\t', 1)[0].decode('utf-8')
             if old_id == '':
                 old_id = idx
                 end += len(line)

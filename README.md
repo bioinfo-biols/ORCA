@@ -7,6 +7,7 @@ Orca is a command-line toolkit for RNA modification analysis, featuring preproce
 - [Introduction](#introduction)
 - [Installation](#installation)
 - [Usage](#usage)
+  - [Local regression tests](#local-regression-tests)
   - [Step1. Basecalling & alignments](#step1-basecalling--alignments)
   - [Step2. Prediction](#step2-prediction)
   - [Step3. Annotation](#step3-annotation)
@@ -35,15 +36,26 @@ Recommended python version is python v3.10.
 
 ### Installation with wheel
 
-One can create a virtual envirionment with conda and install Orca using wheel file provided in dist folder.
+Create an isolated environment and install the wheel from the [v-0.1.3 release](https://github.com/bioinfo-biols/ORCA/releases/tag/v-0.1.3):
 
 ```bash
 conda create -n Orca python=3.10
 conda activate Orca
-wget https://github.com/bioinfo-biols/ORCA/releases/download/v-0.1.2/ORCA-0.1.2-py3-none-any.whl
-pip install ./ORCA-0.1.2-py3-none-any.whl
+wget https://github.com/bioinfo-biols/ORCA/releases/download/v-0.1.3/orca-0.1.3-py3-none-any.whl
+python -m pip install ./orca-0.1.3-py3-none-any.whl
 ```
-The installation takes less than 2 hours in a stable network environment.
+
+Version 0.1.3 includes the final-contig pileup indexing fix and uses byte offsets for CRLF and UTF-8 input. The older v-0.1.2 release does not contain the final-contig fix. If upgrading, rerun basecalling feature extraction and feature merge before prediction to regenerate outputs that may have omitted the final contig.
+
+### Installation from source
+
+Install the same fixed version directly from its source tag:
+
+```bash
+python -m pip install "git+https://github.com/bioinfo-biols/ORCA.git@v-0.1.3"
+```
+
+Use Linux or WSL2 for the sequencing tools listed above. Installation time depends on the network and Python dependencies.
 
 ### Information of test files
 
@@ -56,9 +68,20 @@ To test Orca, please start from [Step2](#step2-prediction). We provide test file
 | 3      | Answer_from_RMBase_and_DirectRMDB_NGS.csv | orca-annotation              | A csv file containing the genomic coordicates of RNA modifications |
 | 4      | hg38.gtf                                  | orca-genomic_locator         | GTF file from Ensembl                                              |
 
-Please click [Here](https://bioinfo.ioz.ac.cn/files/share/9jMFIP5A) for download.
+Download [Orca_test.zip](https://bioinfo.ioz.ac.cn/files/share/Nt61RZf3) and extract it before starting Step 2. The share and ZIP download were verified on October 3, 2026; the archive contains the four files listed above. Annotation also requires a matching reference genome FASTA and a modification base-type TSV supplied by the user; neither is included in this archive.
 
 ## Usage
+
+### Local regression tests
+
+From a source checkout, run the focused regression suite with Python 3.10 or later:
+
+```bash
+python -m pip install numpy pandas tqdm pysam==0.23.2
+python -m unittest discover -s tests -v
+```
+
+These tests import the production code and check empty, single-contig and multi-contig pileups, final-contig byte ranges, CRLF, UTF-8 and missing final newlines. Synthetic CLI tests cover basecalling feature extraction and feature merge with one or two worker processes. They do not reproduce a complete sequencing, prediction or annotation run.
 
 ### Step1. Basecalling & alignments
 
@@ -73,6 +96,12 @@ Align FASTQ sequences to the transcriptome with minimap2 and samtools:
 ```bash
 minimap2 -ax splice -N 0 -uf -k14 --cs -t threads <transcriptome> <fastq> | samtools sort -@ threads -o <bam>
 samtools index -@ threads <bam>
+```
+
+Generate the pileup for basecalling feature extraction using the same reference as the alignments:
+
+```bash
+samtools mpileup -f <transcriptome> <bam> > <pileup_file>
 ```
 
 Convert FAST5 files using slow5tools:
@@ -146,7 +175,7 @@ While running Orca, make sure to run all commands in Step 2 and Step 3 with **th
 4. **Run Prediction**  
     ```bash
     # RNA modification sites prediction based on pretrained models
-    usage: prediction.py [-h] [--prefix PREFIX] --work_dir WORK_DIR
+    usage: orca-prediction [-h] [--prefix PREFIX] --work_dir WORK_DIR
                          [--default_model_version {002,004} | --extractor_path EXTRACTOR_PATH] [--classifier_path CLASSIFIER_PATH]
     
     Run prediction on sample feature data using prediction models.
@@ -210,7 +239,7 @@ While running Orca, make sure to run all commands in Step 2 and Step 3 with **th
 
 4. **Annotation**:  
 
-    The answer file is a 0-based modification annotation CSV file without a header, containing four columns: chromosome, position, strand, and modification type. See the test folder for an example.
+    The answer file is a 0-based modification annotation CSV file without a header, containing four columns: chromosome, position, strand, and modification type. See Answer_from_RMBase_and_DirectRMDB_NGS.csv in the test archive for an example.
     
     The base type file is a two-column TSV file specifying the base type for each modification. It contains no required header; the first column is the modification name and the second column is the corresponding base type (A/C/G/T/N/unknown, please do not use U).
 
@@ -275,4 +304,4 @@ Maintainer: Han Dong
 
 This project is licensed under the MIT License – see the [LICENSE](LICENSE) file for details.
 
-*Last updated: June 10, 2025*
+*Last updated: October 3, 2026*

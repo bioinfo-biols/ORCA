@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='ORCA',
-    version='0.1.2',
+    version='0.1.3',
     author='Han DONG',
     author_email='donghan@biols.ac.cn',
     description='ORCA: Omni RNA modification characterization and annotation',
